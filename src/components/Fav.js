@@ -9,11 +9,11 @@ class Fav extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            teams: [],
+            favTeams: [],
             loading : true,
             currentPage : 1,
             currentPageTeams : [],
-            teamsOnOnePage : 5,
+            teamsOnOnePage : 15,
             indexFirst : 0  ,
             indexLast:0,
             prev:null,
@@ -21,9 +21,9 @@ class Fav extends React.Component {
         };
         this.removeFav = this.removeFav.bind(this);
     }
-    removeFav=(item)=>{
-        // console.log(key,item)
-        localforage.removeItem(item.team_id).then(function() {
+    removeFav=(team)=>{
+        //remove from fav
+        localforage.removeItem(team.team_id).then(function() {
             console.log('Removed from fav');
         }).catch(function(err) {
             console.log('Try later');
@@ -31,23 +31,17 @@ class Fav extends React.Component {
         this.componentDidMount();
     }
     displayCorrespondingTeams(num) {
-        // alert(num)
         this.setState({currentPage: num});
-        
-        // console.log(this.state.currentPage)
     }
 
     componentDidMount() {
         var result=[];
         localforage.iterate(function(value, key, iterationNumber) {
-            // result[key]=value;
-            // console.log(value)
+            //determine all teams stored in index db
             result.push(JSON.parse(JSON.stringify(value)));
         }).then(() => {
-            // console.log('Iteration has completed');
-            console.log("result is"+result);
             this.setState({
-                teams: result,
+                favTeams: result,
                 loading : false
             });
         }).catch(function(err) {
@@ -55,41 +49,43 @@ class Fav extends React.Component {
         });
         // if(this.props.selectValue)
     }
+    // to present sorted order when switching from one all to fav tab or vice versa
     static getDerivedStateFromProps(props, state) {
         if(props.sortByValue=="wins"){
-            let res=state.teams;
+            let res=state.favTeams;
             res.sort(function(a,b){
                 return parseInt(b.wins)  - parseInt(a.wins);
             }) 
-            return {teams:res}            
+            return {favTeams:res}            
         }
         if(props.sortByValue=="name"){
-            let res=state.teams;
+            let res=state.favTeams;
             res.sort(function(a,b){
                 return a.name.localeCompare(b.name)
             }) 
-            return {teams:res}           
+            return {favTeams:res}           
         }
     }
+    //to prevent infinite loop caused by sorting by name or wins 
     getSnapshotBeforeUpdate(prevProps, prevState) {
         this.state.prev=prevProps.sortByValue;
         this.state.prevShowAll=prevProps.showAll;
     }
+    //determine whether to sort by name or wins
     componentDidUpdate(){
-            // console.log("current"+this.props.sortByValue)
             if(this.props.sortByValue=="wins"&& this.state.prev!="wins"){
-                let res=this.state.teams;
+                let res=this.state.favTeams;
                 res.sort(function(a,b){
                     return parseInt(b.wins)  - parseInt(a.wins);
                 }) 
-                this.setState({teams:res})            
+                this.setState({favTeams:res})            
             }
             if(this.props.sortByValue=="name"&& this.state.prev!="name" ){
-                let res=this.state.teams;
+                let res=this.state.favTeams;
                 res.sort(function(a,b){
                     return a.name.localeCompare(b.name)
                 }) 
-                this.setState({teams:res})            
+                this.setState({favTeams:res})            
             }
     }
 
@@ -100,7 +96,7 @@ class Fav extends React.Component {
             
             this.state.indexLast=this.state.currentPage*this.state.teamsOnOnePage;
             this.state.indexFirst=this.state.indexLast-this.state.teamsOnOnePage;
-            this.state.currentPageTeams=this.state.teams.slice(this.state.indexFirst,this.state.indexLast);
+            this.state.currentPageTeams=this.state.favTeams.slice(this.state.indexFirst,this.state.indexLast);
             if(this.state.currentPageTeams.length!=0){
             return(
                 <div>
@@ -114,15 +110,15 @@ class Fav extends React.Component {
                                 <th>Favourite</th>
                             </tr>
                             
-                            {this.state.currentPageTeams.map((item,key) =>{
+                            {this.state.currentPageTeams.map((team,key) =>{
              
                                 return (
-                                    <tr key = {item.team_id}>
-                                        <td><Logo url={item.logo_url}></Logo></td>
-                                        <td>{item.name}</td>
-                                        <td>{item.wins}</td>
-                                        <td>{item.losses}</td>
-                                        <td><img src={require('./star1.png')} alt="fav" width="30px" height="30px" onClick={()=>this.removeFav(item)}></img></td>
+                                    <tr key = {team.team_id}>
+                                        <td><Logo url={team.logo_url}></Logo></td>
+                                        <td>{team.name}</td>
+                                        <td>{team.wins}</td>
+                                        <td>{team.losses}</td>
+                                        <td><img src={require('./star1.png')} alt="fav" width="30px" height="30px" onClick={()=>this.removeFav(team)}></img></td>
                                     </tr>
                                     )
                                 
@@ -130,7 +126,7 @@ class Fav extends React.Component {
                         </tbody>
                     </table>
                     {/* {this.state.currentPageTeams[0]["name"]} */}
-                    <Page teamsOnOnePage={this.state.teamsOnOnePage} totalTeams={this.state.teams.length} display={this.displayCorrespondingTeams.bind(this)}></Page>
+                    <Page teamsOnOnePage={this.state.teamsOnOnePage} totalTeams={this.state.favTeams.length} display={this.displayCorrespondingTeams.bind(this)}></Page>
                 </div>
             );
             }

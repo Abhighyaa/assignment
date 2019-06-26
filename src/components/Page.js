@@ -2,7 +2,7 @@ import React from 'react';
 
 const Page = ({teamsOnOnePage,totalTeams,display})=> {
      const pageNumbers=[];
-    
+        //no of pages and insert in array
         for(let i=1;i<=Math.ceil(totalTeams/teamsOnOnePage);i++){
             pageNumbers.push(i);
         }
